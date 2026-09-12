@@ -6,31 +6,79 @@
 <title>Conversa</title>
 <style>
   :root {
-    --bg: #14161a;
-    --panel: #1c1f24;
-    --border: #2a2e35;
-    --text: #e8e6e1;
-    --muted: #8b8f97;
-    --accent: #5b8def;
-    --accent-dim: #2d3f5c;
-    --user-bubble: #2a3a52;
-    --ai-bubble: #23262c;
-    --danger: #e05a5a;
-    --code-bg: #0d0f12;
+    --bg: #17181c;
+    --panel: #1e2025;
+    --panel-raised: #24262c;
+    --border: #2c2e35;
+    --border-soft: #24262c;
+    --text: #ececef;
+    --text-dim: #c7c8cf;
+    --muted: #86878f;
+    --accent: #7c9eff;
+    --accent-hover: #93b0ff;
+    --accent-soft: rgba(124,158,255,0.12);
+    --accent-soft-border: rgba(124,158,255,0.28);
+    --user-bubble: #2a3350;
+    --ai-bubble: #232429;
+    --danger: #ec6f66;
+    --danger-soft: rgba(236,111,102,0.1);
+    --code-bg: #0f1013;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    font-size: 16px;
   }
 
   * { box-sizing: border-box; }
 
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #34363d; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: #40424a; }
+
+  button {
+    font-family: inherit;
+  }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .iconBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .iconBtn:hover { border-color: var(--accent-soft-border); color: var(--text); background: var(--accent-soft); }
+  .iconBtn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
   .appRow {
     flex: 1;
@@ -40,15 +88,15 @@
 
   /* ---------- Sidebar de histórico ---------- */
   #historySidebar {
-    width: 260px;
-    max-width: 80vw;
+    width: 272px;
+    max-width: 82vw;
     background: var(--panel);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
     transform: translateX(-100%);
-    transition: transform 0.2s ease;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     position: fixed;
     top: 0;
     left: 0;
@@ -61,43 +109,62 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(10,10,12,0.55);
+    backdrop-filter: blur(1px);
     z-index: 19;
   }
   #sidebarOverlay.show { display: block; }
 
+  .sidebarHeader {
+    padding: 16px 16px 8px;
+  }
+
   #newChatBtn {
-    margin: 14px;
-    padding: 10px;
+    width: 100%;
+    padding: 11px 14px;
     background: var(--accent);
     border: none;
-    color: white;
-    border-radius: 8px;
-    font-size: 13px;
+    color: #0e1420;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
     font-weight: 600;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s ease, transform 0.1s ease;
   }
+  #newChatBtn:hover { background: var(--accent-hover); }
+  #newChatBtn:active { transform: scale(0.98); }
+  #newChatBtn svg { width: 15px; height: 15px; }
 
   #conversationList {
     flex: 1;
     overflow-y: auto;
-    padding: 0 8px;
+    padding: 8px 10px 14px;
   }
 
   .convItem {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 10px;
-    border-radius: 8px;
-    font-size: 13px;
-    color: var(--text);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    color: var(--text-dim);
     cursor: pointer;
     margin-bottom: 2px;
-    gap: 6px;
+    gap: 8px;
+    border-left: 2px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
   }
-  .convItem:hover { background: rgba(255,255,255,0.05); }
-  .convItem.active { background: var(--accent-dim); }
+  .convItem:hover { background: var(--panel-raised); color: var(--text); }
+  .convItem.active {
+    background: var(--accent-soft);
+    color: var(--text);
+    border-left-color: var(--accent);
+  }
   .convItem .convTitle {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -106,11 +173,14 @@
   }
   .convItem .convDelete {
     color: var(--muted);
-    font-size: 14px;
-    padding: 2px 6px;
+    font-size: 13px;
+    padding: 3px 6px;
+    border-radius: 6px;
     flex-shrink: 0;
+    line-height: 1;
+    transition: color 0.15s ease, background 0.15s ease;
   }
-  .convItem .convDelete:hover { color: var(--danger); }
+  .convItem .convDelete:hover { color: var(--danger); background: var(--danger-soft); }
 
   /* ---------- Layout principal ---------- */
   #mainArea {
@@ -121,48 +191,62 @@
   }
 
   header {
-    padding: 16px 20px;
+    padding: 14px 20px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: var(--panel);
-    gap: 10px;
+    gap: 12px;
   }
 
   .headerLeft {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
   }
 
   #menuBtn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 6px;
-    width: 34px;
-    height: 34px;
-    font-size: 16px;
-    cursor: pointer;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
+    padding: 0;
+  }
+
+  .headerTitleWrap {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   header h1 {
-    font-size: 16px;
+    font-size: 15.5px;
     font-weight: 600;
     margin: 0;
-    letter-spacing: 0.2px;
+    letter-spacing: -0.1px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--text);
   }
 
   header .status {
     font-size: 12px;
     color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
+  header .status .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  header .status.ready .dot { background: #63d68a; }
 
   .headerRight {
     display: flex;
@@ -172,64 +256,75 @@
   }
 
   #settingsBtn, #authBtn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 12px;
-    cursor: pointer;
-    white-space: nowrap;
+    height: 36px;
+    padding: 0 13px;
+    font-size: 12.5px;
+    font-weight: 500;
   }
-  #settingsBtn:hover, #authBtn:hover { color: var(--text); border-color: var(--accent); }
 
   #userChip {
     display: none;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text);
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    padding-right: 2px;
   }
   #userChip.show { display: flex; }
   #userChip img {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
+    border: 1px solid var(--border);
   }
 
   #settingsPanel {
     display: none;
-    padding: 16px 20px;
+    padding: 18px 20px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
-    gap: 10px;
+    gap: 12px;
     flex-direction: column;
   }
-  #settingsPanel.open { display: flex; }
+  #settingsPanel.open { display: flex; animation: slideDown 0.18s ease; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   #settingsPanel label {
     font-size: 12px;
     color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
   }
 
   #settingsPanel input, #settingsPanel select, #settingsPanel textarea {
     background: var(--bg);
     border: 1px solid var(--border);
     color: var(--text);
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
     width: 100%;
     font-family: inherit;
+    transition: border-color 0.15s ease;
+  }
+  #settingsPanel input:focus, #settingsPanel select:focus, #settingsPanel textarea:focus {
+    outline: none;
+    border-color: var(--accent);
   }
 
   #settingsPanel .section-title {
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--accent);
     font-weight: 600;
-    margin-top: 6px;
+    margin-top: 4px;
     border-top: 1px solid var(--border);
-    padding-top: 12px;
+    padding-top: 14px;
+    letter-spacing: 0.1px;
   }
   #settingsPanel .section-title:first-child {
     border-top: none;
@@ -237,72 +332,143 @@
     margin-top: 0;
   }
 
+  #saveFirebaseBtn {
+    background: var(--accent);
+    color: #0e1420;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  #saveFirebaseBtn:hover { background: var(--accent-hover); }
+
   #chat {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 24px 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 18px;
   }
+
+  #chat:empty::before {
+    content: "Comece uma conversa";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .msgRow {
+    display: flex;
+    gap: 10px;
+    max-width: 92%;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msgRow.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+  .msgRow.assistant { align-self: flex-start; }
+
+  .avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .avatar.aiAvatar {
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+  }
+  .avatar.aiAvatar svg { width: 14px; height: 14px; color: #0e1420; }
 
   .msg {
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    line-height: 1.5;
-    font-size: 14px;
+    padding: 11px 15px;
+    border-radius: var(--radius-md);
+    line-height: 1.55;
+    font-size: 14.5px;
     white-space: pre-wrap;
     word-wrap: break-word;
+    min-width: 0;
   }
 
-  .msg.user {
-    align-self: flex-end;
+  .msgRow.user .msg {
     background: var(--user-bubble);
-    border-bottom-right-radius: 3px;
+    color: var(--text);
+    border-bottom-right-radius: 4px;
   }
 
-  .msg.assistant {
-    align-self: flex-start;
+  .msgRow.assistant .msg {
     background: var(--ai-bubble);
-    border-bottom-left-radius: 3px;
-    max-width: 90%;
+    border: 1px solid var(--border-soft);
+    border-bottom-left-radius: 4px;
   }
 
-  .msg.assistant p { margin: 0 0 8px 0; }
-  .msg.assistant p:last-child { margin-bottom: 0; }
+  .msg p { margin: 0 0 8px 0; }
+  .msg p:last-child { margin-bottom: 0; }
 
   .msg.error {
     align-self: center;
-    background: rgba(224,90,90,0.12);
-    border: 1px solid rgba(224,90,90,0.3);
+    background: var(--danger-soft);
+    border: 1px solid rgba(236,111,102,0.28);
     color: var(--danger);
     font-size: 13px;
     max-width: 90%;
+    margin: 0 auto;
   }
 
   .msg.info {
     align-self: center;
-    background: rgba(91,141,239,0.1);
-    border: 1px solid rgba(91,141,239,0.3);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-soft-border);
     color: var(--accent);
     font-size: 12px;
     max-width: 90%;
+    margin: 0 auto;
   }
 
-  .msg.typing {
-    align-self: flex-start;
+  .msgRow.typing .msg {
     background: var(--ai-bubble);
+    border: 1px solid var(--border-soft);
     color: var(--muted);
-    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 13px 15px;
+  }
+  .typingDot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: typingBounce 1.2s infinite ease-in-out;
+  }
+  .typingDot:nth-child(2) { animation-delay: 0.15s; }
+  .typingDot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-3px); opacity: 1; }
   }
 
   /* ---------- Blocos de código ---------- */
   .codeBlock {
     background: var(--code-bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    margin: 8px 0;
+    border-radius: var(--radius-sm);
+    margin: 10px 0;
     overflow: hidden;
     font-size: 13px;
   }
@@ -310,8 +476,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 10px;
-    background: rgba(255,255,255,0.03);
+    padding: 7px 12px;
+    background: rgba(255,255,255,0.025);
     border-bottom: 1px solid var(--border);
     font-size: 11px;
     color: var(--muted);
@@ -321,18 +487,19 @@
     border: 1px solid var(--border);
     color: var(--muted);
     border-radius: 6px;
-    padding: 4px 8px;
+    padding: 4px 9px;
     font-size: 11px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
-  .codeCopyBtn:hover { color: var(--text); border-color: var(--accent); }
+  .codeCopyBtn:hover { color: var(--text); border-color: var(--accent-soft-border); }
   .codeCopyBtn svg { width: 12px; height: 12px; }
   .codeBlock pre {
     margin: 0;
-    padding: 12px;
+    padding: 13px;
     overflow-x: auto;
     white-space: pre;
   }
@@ -340,17 +507,18 @@
     font-family: "SF Mono", Consolas, Monaco, monospace;
     font-size: 12.5px;
     color: #d8dce2;
+    line-height: 1.5;
   }
   .inlineCode {
     background: rgba(255,255,255,0.08);
-    padding: 1px 5px;
+    padding: 1.5px 5px;
     border-radius: 4px;
     font-family: "SF Mono", Consolas, Monaco, monospace;
     font-size: 12.5px;
   }
 
   footer {
-    padding: 14px 20px 20px;
+    padding: 14px 20px 18px;
     background: var(--panel);
     border-top: 1px solid var(--border);
   }
@@ -359,54 +527,65 @@
     display: flex;
     gap: 10px;
     align-items: flex-end;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 8px 8px 8px 16px;
+    transition: border-color 0.15s ease;
   }
+  #inputRow:focus-within { border-color: var(--accent); }
 
   #promptInput {
     flex: 1;
     resize: none;
-    background: var(--bg);
-    border: 1px solid var(--border);
+    background: transparent;
+    border: none;
     color: var(--text);
-    padding: 12px 14px;
-    border-radius: 10px;
-    font-size: 14px;
+    padding: 8px 0;
+    font-size: 14.5px;
     font-family: inherit;
     max-height: 140px;
-    min-height: 44px;
+    min-height: 24px;
+    line-height: 1.5;
   }
-  #promptInput:focus { outline: none; border-color: var(--accent); }
+  #promptInput:focus { outline: none; }
+  #promptInput::placeholder { color: var(--muted); }
 
   #sendBtn {
     background: var(--accent);
     border: none;
-    color: white;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    color: #0e1420;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 16px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, transform 0.1s ease;
   }
-  #sendBtn:disabled { background: var(--accent-dim); cursor: not-allowed; }
-  #sendBtn:hover:not(:disabled) { filter: brightness(1.1); }
+  #sendBtn svg { width: 17px; height: 17px; }
+  #sendBtn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+  #sendBtn:hover:not(:disabled) { background: var(--accent-hover); }
+  #sendBtn:active:not(:disabled) { transform: scale(0.94); }
 
   #clearBtn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: 8px;
-    padding: 0 12px;
-    height: 44px;
-    cursor: pointer;
-    font-size: 13px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
     flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--muted);
   }
-  #clearBtn:hover { color: var(--danger); border-color: var(--danger); }
+  #clearBtn:hover { color: var(--danger); background: var(--danger-soft); border: none; }
 
   .hint {
     font-size: 11px;
     color: var(--muted);
-    margin-top: 8px;
+    margin-top: 10px;
     text-align: center;
   }
 </style>
@@ -416,17 +595,24 @@
 <div class="appRow">
   <div id="sidebarOverlay"></div>
   <div id="historySidebar">
-    <button id="newChatBtn">+ Nova conversa</button>
+    <div class="sidebarHeader">
+      <button id="newChatBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Nova conversa
+      </button>
+    </div>
     <div id="conversationList"></div>
   </div>
 
   <div id="mainArea">
     <header>
       <div class="headerLeft">
-        <button id="menuBtn">☰</button>
-        <div>
+        <button id="menuBtn" class="iconBtn" aria-label="Abrir histórico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="headerTitleWrap">
           <h1 id="convTitleHeader">Conversa</h1>
-          <div class="status" id="statusLine">Nenhuma chave configurada</div>
+          <div class="status" id="statusLine"><span class="dot"></span><span id="statusText">Nenhuma chave configurada</span></div>
         </div>
       </div>
       <div class="headerRight">
@@ -434,8 +620,11 @@
           <img id="userPhoto" src="" alt="">
           <span id="userName"></span>
         </div>
-        <button id="authBtn">Entrar com Google</button>
-        <button id="settingsBtn">Configurações</button>
+        <button id="authBtn" class="iconBtn">Entrar com Google</button>
+        <button id="settingsBtn" class="iconBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Configurações
+        </button>
       </div>
     </header>
 
@@ -454,6 +643,10 @@
           <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
           <option value="gemini-3.1-flash">gemini-3.1-flash</option>
           <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+          <option value="gemma-4-4b-it">gemma-4-4b-it (leve, grátis)</option>
+          <option value="gemma-4-12b-it">gemma-4-12b-it</option>
+          <option value="gemma-4-26b-a4b-it">gemma-4-26b-a4b-it</option>
+          <option value="gemma-4-31b-it">gemma-4-31b-it</option>
         </select>
       </div>
       <div>
@@ -466,7 +659,7 @@
         <label for="firebaseConfig">Configuração do Firebase (cole o objeto firebaseConfig)</label>
         <textarea id="firebaseConfig" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'></textarea>
       </div>
-      <button id="saveFirebaseBtn" style="background:var(--accent); color:white; border:none; border-radius:6px; padding:8px; font-size:12px; cursor:pointer;">Salvar e ativar sincronização</button>
+      <button id="saveFirebaseBtn">Salvar e ativar sincronização</button>
     </div>
 
     <div id="chat"></div>
@@ -474,8 +667,12 @@
     <footer>
       <div id="inputRow">
         <textarea id="promptInput" placeholder="Escreva sua mensagem..." rows="1"></textarea>
-        <button id="clearBtn" title="Apagar conversa atual">Limpar</button>
-        <button id="sendBtn">➤</button>
+        <button id="clearBtn" class="iconBtn" title="Apagar conversa atual" aria-label="Apagar conversa atual">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+        <button id="sendBtn" aria-label="Enviar mensagem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
       </div>
       <div class="hint">Sem login, a chave e o histórico ficam só neste navegador. Pegue sua chave grátis em aistudio.google.com/apikey</div>
     </footer>
@@ -499,6 +696,7 @@ const systemPromptInput = document.getElementById('systemPrompt');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsPanel = document.getElementById('settingsPanel');
 const statusLine = document.getElementById('statusLine');
+const statusText = document.getElementById('statusText');
 const authBtn = document.getElementById('authBtn');
 const userChip = document.getElementById('userChip');
 const userPhoto = document.getElementById('userPhoto');
@@ -513,12 +711,10 @@ const conversationList = document.getElementById('conversationList');
 const convTitleHeader = document.getElementById('convTitleHeader');
 
 // ---------- Estado das conversas ----------
-// conversations: [{ id, title, messages: [{role, content}], updatedAt }]
 let conversations = JSON.parse(localStorage.getItem('chat_conversations') || 'null');
 let activeConvId = localStorage.getItem('active_conv_id');
 
 if (!conversations || !Array.isArray(conversations) || conversations.length === 0) {
-  // Migrar histórico antigo (formato de versão anterior), se existir
   const oldHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
   const firstConv = {
     id: 'conv_' + Date.now(),
@@ -553,7 +749,8 @@ function updateStatus() {
     ? `Modelo: ${modelSelect.value}`
     : 'Nenhuma chave configurada';
   if (currentUser) base += ' · sincronizado';
-  statusLine.textContent = base;
+  statusText.textContent = base;
+  statusLine.classList.toggle('ready', !!apiKeyInput.value);
 }
 updateStatus();
 
@@ -651,20 +848,13 @@ function updateHeaderTitle() {
 }
 
 // ---------- Renderização de mensagens (com blocos de código) ----------
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-const copyIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const copyIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const aiIconSvg = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.6L19.5 9l-5.7 1.4L12 16l-1.8-5.6L4.5 9l5.7-1.4L12 2z"/></svg>';
 
 function renderContentWithCodeBlocks(container, content) {
   const parts = content.split(/```/);
   parts.forEach((part, idx) => {
     if (idx % 2 === 1) {
-      // Bloco de código
       const firstLineBreak = part.indexOf('\n');
       let lang = '';
       let code = part;
@@ -707,7 +897,6 @@ function renderContentWithCodeBlocks(container, content) {
       block.appendChild(pre);
       container.appendChild(block);
     } else if (part.length > 0) {
-      // Texto normal, com suporte a `código inline`
       const textDiv = document.createElement('div');
       const segments = part.split(/`([^`]+)`/);
       segments.forEach((seg, segIdx) => {
@@ -730,16 +919,44 @@ function renderContentWithCodeBlocks(container, content) {
 }
 
 function renderMessage(role, content) {
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  if (role === 'assistant' && content.includes('```')) {
-    renderContentWithCodeBlocks(div, content);
-  } else {
-    div.textContent = content;
+  const row = document.createElement('div');
+  row.className = `msgRow ${role}`;
+
+  if (role === 'assistant') {
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar aiAvatar';
+    avatar.innerHTML = aiIconSvg;
+    row.appendChild(avatar);
   }
-  chatEl.appendChild(div);
+
+  const bubble = document.createElement('div');
+  bubble.className = `msg ${role}`;
+  if (role === 'assistant' && content.includes('```')) {
+    renderContentWithCodeBlocks(bubble, content);
+  } else {
+    bubble.textContent = content;
+  }
+  row.appendChild(bubble);
+
+  chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
-  return div;
+  return row;
+}
+
+function renderTyping() {
+  const row = document.createElement('div');
+  row.className = 'msgRow assistant typing';
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar aiAvatar';
+  avatar.innerHTML = aiIconSvg;
+  const bubble = document.createElement('div');
+  bubble.className = 'msg';
+  bubble.innerHTML = '<span class="typingDot"></span><span class="typingDot"></span><span class="typingDot"></span>';
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return row;
 }
 
 function renderHistory() {
@@ -927,7 +1144,7 @@ async function sendMessage() {
   promptInput.style.height = 'auto';
 
   sendBtn.disabled = true;
-  const typingEl = renderMessage('typing', 'Digitando...');
+  const typingRow = renderTyping();
 
   const contents = conv.messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -949,7 +1166,7 @@ async function sendMessage() {
       body: JSON.stringify(body)
     });
 
-    typingEl.remove();
+    typingRow.remove();
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
@@ -966,7 +1183,7 @@ async function sendMessage() {
     renderMessage('assistant', reply);
     saveHistory();
   } catch (err) {
-    typingEl.remove();
+    typingRow.remove();
     renderMessage('error', 'Falha de conexão: ' + err.message);
   }
 
