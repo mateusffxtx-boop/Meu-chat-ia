@@ -1506,7 +1506,9 @@ const DEFAULT_MODEL = 'gemini-3.6-flash';
 const MODELS = [
   { id: 'gemini-3.6-flash',       short: 'Gemini 3.6',    name: 'Gemini 3.6 Flash',       hint: 'Rápido · recomendado' },
   { id: 'gemini-3.1-flash-lite',  short: '3.1 Lite',      name: 'Gemini 3.1 Flash Lite',  hint: 'Leve · econômico' },
-  { id: 'gemma-4-26b-a4b-it',     short: 'Gemma 26B',     name: 'Gemma 4 26B',            hint: 'Grátis · maior' }
+  { id: 'gemma-4-26b-a4b-it',     short: 'Gemma 26B',     name: 'Gemma 4 26B',            hint: 'Grátis · maior' },
+  { id: 'gemini-2.5-flash-image', short: 'Nano Banana',   name: 'Nano Banana',            hint: 'Gera imagens · grátis', image: true },
+  { id: 'gemini-3.1-flash-image', short: 'Nano Banana 2', name: 'Nano Banana 2',          hint: 'Gera imagens · exige chave paga', image: true }
 ];
 
 let currentModel = localStorage.getItem('chat_model') || DEFAULT_MODEL;
@@ -2397,6 +2399,48 @@ function renderTyping() {
   return row;
 }
 
+// ---------- Bolha de streaming (preenchida caractere por caractere) ----------
+function createStreamingBubble() {
+  removeWelcome();
+  const row = document.createElement('div');
+  row.className = 'msgRow assistant';
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar aiAvatar';
+  avatar.innerHTML = aiIconSvg;
+  const bubble = document.createElement('div');
+  bubble.className = 'msg assistant';
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return { row, bubble };
+}
+
+function updateStreamingBubble(bubble, fullText) {
+  bubble.innerHTML = '';
+  if (fullText.includes('```')) {
+    const wrap = document.createElement('div');
+    renderContentWithCodeBlocks(wrap, fullText);
+    bubble.appendChild(wrap);
+  } else {
+    const wrap = document.createElement('div');
+    wrap.textContent = fullText;
+    bubble.appendChild(wrap);
+  }
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function addImageToBubble(bubble, base64Data, mimeType) {
+  const img = document.createElement('img');
+  img.src = `data:${mimeType};base64,${base64Data}`;
+  img.style.cssText = 'max-width:100%; border-radius:12px; margin-top:8px; display:block;';
+  bubble.appendChild(img);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+// Delay artificial para o efeito de "digitando" caractere por caractere
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 // ---------- Boas-vindas ----------
 function buildWelcome() {
   const wrap = document.createElement('div');
@@ -2709,7 +2753,13 @@ async function sendMessage() {
   const sys = systemPromptInput.value.trim();
   if (sys) body.systemInstruction = { parts: [{ text: sys }] };
 
-  const url = `${GEMINI_BASE}/v1beta/models/${encodeURIComponent(currentModel)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const modelInfo = MODELS.find(m => m.id === currentModel);
+  const isImageModel = modelInfo && modelInfo.image;
+
+  // Modelos de imagem (Nano Banana) não suportam streaming de texto — usam generateContent normal
+  const endpoint = isImageModel ? 'generateContent' : 'streamGenerateContent';
+  const streamParam = isImageModel ? '' : '&alt=sse';
+  const url = `${GEMINI_BASE}/v1beta/models/${encodeURIComponent(currentModel)}:${endpoint}?key=${encodeURIComponent(apiKey)}${streamParam}`;
 
   try {
     const response = await fetch(url, {
@@ -2718,9 +2768,8 @@ async function sendMessage() {
       body: JSON.stringify(body)
     });
 
-    typingRow.remove();
-
     if (!response.ok) {
+      typingRow.remove();
       const errData = await response.json().catch(() => ({}));
       let errMsg = errData?.error?.message || `Erro HTTP ${response.status}`;
       if (/file.*not found|expired|invalid.*file/i.test(errMsg)) {
@@ -2732,12 +2781,67 @@ async function sendMessage() {
       return;
     }
 
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '(resposta vazia)';
-    conv.messages.push({ role: 'assistant', content: reply });
-    conv.updatedAt = Date.now();
-    renderMessage('assistant', reply);
-    saveHistory();
+    if (isImageModel) {
+      // Resposta única com imagem(ns) embutida(s)
+      typingRow.remove();
+      const data = await response.json();
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const { row, bubble } = createStreamingBubble();
+      let textOut = '';
+      parts.forEach(p => {
+        if (p.text) textOut += p.text;
+        const inline = p.inline_data || p.inlineData;
+        if (inline && inline.data) {
+          addImageToBubble(bubble, inline.data, inline.mime_type || inline.mimeType || 'image/png');
+        }
+      });
+      if (textOut) updateStreamingBubble(bubble, textOut);
+      conv.messages.push({ role: 'assistant', content: textOut || '(imagem gerada)' });
+      conv.updatedAt = Date.now();
+      saveHistory();
+    } else {
+      // Streaming de texto real, caractere por caractere
+      typingRow.remove();
+      const { bubble } = createStreamingBubble();
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Formato SSE: linhas "data: {...}"
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // guarda linha incompleta pro próximo loop
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const jsonStr = trimmed.slice(5).trim();
+          if (!jsonStr || jsonStr === '[DONE]') continue;
+          try {
+            const chunk = JSON.parse(jsonStr);
+            const chunkText = chunk.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            for (const ch of chunkText) {
+              fullText += ch;
+              updateStreamingBubble(bubble, fullText);
+              await sleep(8); // delay pequeno entre caracteres, efeito de "digitando"
+            }
+          } catch (e) {
+            // chunk incompleto ou inválido, ignora
+          }
+        }
+      }
+
+      if (!fullText) fullText = '(resposta vazia)';
+      conv.messages.push({ role: 'assistant', content: fullText });
+      conv.updatedAt = Date.now();
+      saveHistory();
+    }
   } catch (err) {
     typingRow.remove();
 
