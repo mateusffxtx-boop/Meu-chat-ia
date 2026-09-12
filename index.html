@@ -1507,8 +1507,9 @@ const MODELS = [
   { id: 'gemini-3.6-flash',       short: 'Gemini 3.6',    name: 'Gemini 3.6 Flash',       hint: 'Rápido · recomendado' },
   { id: 'gemini-3.1-flash-lite',  short: '3.1 Lite',      name: 'Gemini 3.1 Flash Lite',  hint: 'Leve · econômico' },
   { id: 'gemma-4-26b-a4b-it',     short: 'Gemma 26B',     name: 'Gemma 4 26B',            hint: 'Grátis · maior' },
-  { id: 'gemini-2.5-flash-image', short: 'Nano Banana',   name: 'Nano Banana',            hint: 'Gera imagens · grátis', image: true },
-  { id: 'gemini-3.1-flash-image', short: 'Nano Banana 2', name: 'Nano Banana 2',          hint: 'Gera imagens · exige chave paga', image: true }
+  { id: 'gemini-2.5-flash-image', short: 'Nano Banana',   name: 'Nano Banana',            hint: 'Gera imagens · exige faturamento', image: true },
+  { id: 'gemini-3.1-flash-image', short: 'Nano Banana 2', name: 'Nano Banana 2',          hint: 'Gera imagens · exige faturamento', image: true },
+  { id: 'pollinations',           short: 'Imagem grátis', name: 'Gerador de imagem grátis', hint: 'Sem chave · sem custo', image: true, freeProvider: true }
 ];
 
 let currentModel = localStorage.getItem('chat_model') || DEFAULT_MODEL;
@@ -2346,7 +2347,7 @@ function removeWelcome() {
   if (w) w.remove();
 }
 
-function renderMessage(role, content, attachments) {
+function renderMessage(role, content, attachments, imageUrl) {
   removeWelcome();
 
   const row = document.createElement('div');
@@ -2364,7 +2365,7 @@ function renderMessage(role, content, attachments) {
 
   renderAttachmentsInBubble(bubble, attachments);
 
-  if (content) {
+  if (content && content !== '(imagem gerada)') {
     if (role === 'assistant' && content.includes('```')) {
       const wrap = document.createElement('div');
       renderContentWithCodeBlocks(wrap, content);
@@ -2374,6 +2375,10 @@ function renderMessage(role, content, attachments) {
       wrap.textContent = content;
       bubble.appendChild(wrap);
     }
+  }
+
+  if (imageUrl) {
+    addImageToBubble(bubble, null, null, imageUrl);
   }
 
   row.appendChild(bubble);
@@ -2430,9 +2435,9 @@ function updateStreamingBubble(bubble, fullText) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-function addImageToBubble(bubble, base64Data, mimeType) {
+function addImageToBubble(bubble, base64Data, mimeType, directUrl) {
   const img = document.createElement('img');
-  img.src = `data:${mimeType};base64,${base64Data}`;
+  img.src = directUrl ? directUrl : `data:${mimeType};base64,${base64Data}`;
   img.style.cssText = 'max-width:100%; border-radius:12px; margin-top:8px; display:block;';
   bubble.appendChild(img);
   chatEl.scrollTop = chatEl.scrollHeight;
@@ -2498,7 +2503,7 @@ function renderHistory() {
     chatEl.appendChild(buildWelcome());
     return;
   }
-  msgs.forEach(m => renderMessage(m.role, m.content, m.attachments));
+  msgs.forEach(m => renderMessage(m.role, m.content, m.attachments, m.imageUrl));
 }
 
 renderConversationList();
@@ -2683,8 +2688,10 @@ clearBtn.addEventListener('click', () => {
 async function sendMessage() {
   const text = promptInput.value.trim();
   const apiKey = apiKeyInput.value.trim();
+  const selectedModelInfo = MODELS.find(m => m.id === currentModel);
+  const usingFreeProvider = selectedModelInfo && selectedModelInfo.freeProvider;
 
-  if (!apiKey) {
+  if (!apiKey && !usingFreeProvider) {
     settingsPanel.classList.add('open');
     apiKeyInput.focus();
     return;
@@ -2731,6 +2738,36 @@ async function sendMessage() {
   isSending = true;
   updateSendBtn();
   const typingRow = renderTyping();
+
+  // ---------- Gerador de imagem grátis (Pollinations, sem chave) ----------
+  if (usingFreeProvider) {
+    try {
+      const seed = Math.floor(Math.random() * 1000000);
+      const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text || 'uma imagem')}?width=768&height=768&seed=${seed}&nologo=true`;
+
+      // Pré-carrega a imagem antes de mostrar, pra saber se deu erro
+      await new Promise((resolve, reject) => {
+        const testImg = new Image();
+        testImg.onload = resolve;
+        testImg.onerror = () => reject(new Error('Falha ao gerar a imagem. Tente novamente.'));
+        testImg.src = imgUrl;
+      });
+
+      typingRow.remove();
+      const { bubble } = createStreamingBubble();
+      addImageToBubble(bubble, null, null, imgUrl);
+      conv.messages.push({ role: 'assistant', content: '(imagem gerada)', imageUrl: imgUrl });
+      conv.updatedAt = Date.now();
+      saveHistory();
+    } catch (err) {
+      typingRow.remove();
+      renderMessage('error', String(err && err.message || err));
+    }
+    isSending = false;
+    updateSendBtn();
+    promptInput.focus();
+    return;
+  }
 
   const contents = conv.messages.map(m => {
     const parts = [];
