@@ -2435,11 +2435,52 @@ function updateStreamingBubble(bubble, fullText) {
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
+const downloadIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+async function downloadImage(src, btn) {
+  const originalHtml = btn.innerHTML;
+  try {
+    let blobUrl = src;
+    let revokeAfter = false;
+    if (!src.startsWith('data:')) {
+      // URL externa (ex: Pollinations) — precisa buscar como blob por causa de CORS
+      const res = await fetch(src);
+      const blob = await res.blob();
+      blobUrl = URL.createObjectURL(blob);
+      revokeAfter = true;
+    }
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `imagem-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (revokeAfter) setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    btn.innerHTML = '✓';
+    setTimeout(() => { btn.innerHTML = originalHtml; }, 1500);
+  } catch (err) {
+    btn.innerHTML = '✕';
+    setTimeout(() => { btn.innerHTML = originalHtml; }, 1500);
+  }
+}
+
 function addImageToBubble(bubble, base64Data, mimeType, directUrl) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative; display:inline-block; max-width:100%; margin-top:8px;';
+
   const img = document.createElement('img');
   img.src = directUrl ? directUrl : `data:${mimeType};base64,${base64Data}`;
-  img.style.cssText = 'max-width:100%; border-radius:12px; margin-top:8px; display:block;';
-  bubble.appendChild(img);
+  img.style.cssText = 'max-width:100%; border-radius:12px; display:block;';
+
+  const downloadBtn = document.createElement('button');
+  downloadBtn.innerHTML = downloadIconSvg;
+  downloadBtn.title = 'Baixar imagem';
+  downloadBtn.style.cssText = 'position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px);';
+  downloadBtn.addEventListener('click', () => downloadImage(img.src, downloadBtn));
+
+  wrap.appendChild(img);
+  wrap.appendChild(downloadBtn);
+  bubble.appendChild(wrap);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
